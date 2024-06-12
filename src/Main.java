@@ -34,13 +34,6 @@ class ParserTree{
     }
 
     public void addChild(TreeNode parent,TreeNode child) {
-//        TreeNode parentNode = findNode(root, parentValue);
-//        if (parentNode != null) {
-//            TreeNode childNode = new TreeNode(childValue);
-//            parentNode.addChild(childNode);
-//        } else {
-//            System.out.println("Parent node not found.");
-//        }
         parent.addChild(child);
     }
 
@@ -117,14 +110,14 @@ class Constants{
             "multexprprime ->  * simpleexpr multexprprime  |  / simpleexpr multexprprime  |   E",
             "simpleexpr ->  ID  |  NUM  |  ( arithexpr )"
     };
-    public static final List<String> NONTERMINALS= List.of(new String[]{
+    public static final List<String> NONTERMINALS= Arrays.asList(
             "program", "stmt", "compoundstmt", "stmts", "ifstmt", "whilestmt", "assgstmt", "boolexpr",
             "boolop", "arithexpr", "arithexprprime", "multexpr", "multexprprime", "simpleexpr"
-    });
-    public static final List<String> TERMINALS= List.of(new String[]{
+    );
+    public static final List<String> TERMINALS= Arrays.asList(
             "{", "}", "if", "(", ")", "then", "else", "while", "ID", "<", ">", "<=", ">=",
             "==", "+", "-", "*", "/", "NUM", "E",";","=","$"
-    });
+    );
     public static final String START="program";
 
 }
@@ -132,7 +125,6 @@ class Constants{
 
 public class Main {
     private static StringBuffer prog = new StringBuffer();
-
     private static List<Production> productions=new ArrayList<>();
     private static HashMap<String, HashSet<String>> firstSet=new HashMap<>();
     private static HashMap<String,HashSet<String>> followSet=new HashMap<>();
@@ -180,11 +172,76 @@ public class Main {
     private static void constructParsingTree() {
         splitProg();
         initStack();
-        parse();
+        int code=parse(0);
+        if(code!=-1){
+            //parsingTable中没有这个项
+            //找到对应nonTerminal所有Terminal有项的
+            String stackTop=parserStack.peek().getValue();
+            Set<String> terminals=parsingTable.get(stackTop).keySet();
+            boolean firstAdd=true;
+            //依次判断是否可行
+            for(String terminal:terminals){
+                if(firstAdd) input.add(code,terminal);//input直接在原来的上面修改
+                else input.set(code,terminal);//只要替换就行
+                Stack<TreeNode> tempStack=parserStack;//但是stack要用temp的做
+                if(isParsable(code,tempStack)){
+                    //找到了正确的错误改正方法
+                    parse(code);//从input正确的地方继续做正确的parse，构造语法树
+                    error(code,terminal);
+                    break;
+                }
+                else{
+                    firstAdd=false;
+                }
+            }
+        }
+
+
     }
 
-    private static void parse(){
-        int idx=0;
+    private static boolean isParsable(int idx,Stack<TreeNode> tempStack){
+        String inputTop=input.get(idx);//添加了终结符之后的
+        String stackTop=tempStack.peek().getValue();
+        while(!stackTop.equals("$")){
+            if(Constants.TERMINALS.contains(stackTop)){
+                if(stackTop.equals(inputTop)){
+                    //两个栈顶的终结符相同
+                    tempStack.pop();
+                    stackTop=tempStack.peek().getValue();//更新stack栈顶node值
+                    idx++;
+                    inputTop=input.get(idx);
+                }
+                else{
+                    //错误1：stack栈顶是非终结符，但是input栈顶没有匹配的，加上stack栈顶元素
+                    return false;
+                }
+            }
+            else{
+                Production production=parsingTable.get(stackTop).get(inputTop);
+                if(production!=null){
+                    //parsingTable中能找到对应的产生式
+                    tempStack.pop();
+                    //逆序压栈
+                    List<String> productionRight=production.right;
+                    for(int i=productionRight.size()-1;i>=0;i--){
+                        TreeNode child=new TreeNode(productionRight.get(i));
+                        if(!productionRight.get(i).equals("E")){
+                            //如果非空，逆序压栈；如果是空，不压栈
+                            tempStack.push(child);
+                        }
+                    }
+                    stackTop=tempStack.peek().getValue();
+                }
+                else{
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private static int parse(int index){
+        int idx=index;
         String inputTop=input.get(idx);
         String stackTop=parserStack.peek().getValue();
         while(!stackTop.equals("$")){
@@ -210,25 +267,29 @@ public class Main {
                     TreeNode parent=parserStack.pop();
                     //逆序压栈
                     List<String> productionRight=production.right;
+                    HashMap<Integer,TreeNode> forwardOrder=new HashMap<>();
                     for(int i=productionRight.size()-1;i>=0;i--){
                         TreeNode child=new TreeNode(productionRight.get(i));
                         if(!productionRight.get(i).equals("E")){
                             //如果非空，逆序压栈；如果是空，不压栈
                             parserStack.push(child);
                         }
-                        //构造语法树
-                        parserTree.addChild(parent,child);
+                        //构造语法树，但是语法树得是顺序的
+                        forwardOrder.put(i,child);
+                    }
+                    for(int i=0;i<forwardOrder.size();i++){
+                        parserTree.addChild(parent,forwardOrder.get(i));
                     }
                     stackTop=parserStack.peek().getValue();
                 }
                 else{
-                    error(idx," ");
+                    return idx;
+
+
                 }
-
-
-
             }
         }
+        return -1;//正常情况
     }
 
     private static void error(int idx,String missing){
@@ -448,7 +509,7 @@ public class Main {
                 String leftPart=parts[0].trim();
                 String[] singleRightParts=parts[1].trim().split("\\|");//右部的|分割
                 for(String singleRightPart:singleRightParts){
-                    Production productionRule=new Production(leftPart, List.of(singleRightPart.trim().split("\\s+")));
+                    Production productionRule=new Production(leftPart, Arrays.asList(singleRightPart.trim().split("\\s+")));
                     productions.add(productionRule);
                 }
             }
