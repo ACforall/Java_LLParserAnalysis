@@ -1,6 +1,3 @@
-import com.sun.source.tree.Tree;
-
-import java.io.FileOutputStream;
 import java.util.*;
 class TreeNode{
     private static int idCounter = 0;
@@ -35,22 +32,6 @@ class ParserTree{
 
     public void addChild(TreeNode parent,TreeNode child) {
         parent.addChild(child);
-    }
-
-    private TreeNode findNode(TreeNode node, String value) {
-        if (node == null) {
-            return null;
-        }
-        if (node.value.equals(value)) {
-            return node;
-        }
-        for (TreeNode child : node.children) {
-            TreeNode foundNode = findNode(child, value);
-            if (foundNode != null) {
-                return foundNode;
-            }
-        }
-        return null;
     }
 
     public void printTree() {
@@ -152,11 +133,6 @@ public class Main {
         }
     }
 
-
-    // add your method here!!
-
-
-
     /**
      *  you should add some code in this method to achieve this lab
      */
@@ -183,7 +159,8 @@ public class Main {
             for(String terminal:terminals){
                 if(firstAdd) input.add(code,terminal);//input直接在原来的上面修改
                 else input.set(code,terminal);//只要替换就行
-                Stack<TreeNode> tempStack=parserStack;//但是stack要用temp的做
+//                Stack<TreeNode> tempStack=parserStack;//但是stack要用temp的做 Attention: Stack<TreeNode> tempStack=parserStack;是浅拷贝，对tempStack进行修改同时会修改parserStack
+                Stack<TreeNode> tempStack=deepCopyStack(parserStack);
                 if(isParsable(code,tempStack)){
                     //找到了正确的错误改正方法
                     parse(code);//从input正确的地方继续做正确的parse，构造语法树
@@ -195,8 +172,14 @@ public class Main {
                 }
             }
         }
+    }
 
-
+    private static Stack<TreeNode> deepCopyStack(Stack<TreeNode> original) {
+        Stack<TreeNode> copy = new Stack<>();
+        for (TreeNode node : original) {
+            copy.push(new TreeNode(node.getValue())); // Use copy constructor for deep copy
+        }
+        return copy;
     }
 
     private static boolean isParsable(int idx,Stack<TreeNode> tempStack){
@@ -292,17 +275,34 @@ public class Main {
         return -1;//正常情况
     }
 
-    private static void error(int idx,String missing){
-        //获取行数
-        int line=0;
-        String[] progSplitByEnter=prog.toString().split("\n");
-        for(String progLine:progSplitByEnter){
-            line++;
-            if(progLine.contains(missing)){
-                break;
+    private static void error(int index,String missing){
+//        //获取行数
+//        int line=0;
+//        String[] progSplitByEnter=prog.toString().split("\n");
+//        for(String progLine:progSplitByEnter){
+//            line++;
+//            if(progLine.contains(missing)){
+//                break;
+//            }
+//        }
+//        System.out.println("语法错误,第"+line+"行,缺少\""+missing+"\"");
+
+        //实际上就是找到栈顶的行数,但是可能有相同的，比如NUM和NUM，所以用input和原来的prog进行比较，
+        int line = 1; // 获取行号
+        int count = 0;
+        for (int i = 0; i < prog.toString().length() && count < index; i++) {
+            if (prog.charAt(i) == input.get(count).charAt(0)) {
+                int j = 1;
+                while (j < input.get(count).length() && prog.charAt(i) == input.get(count).charAt(j)) {
+                    i++; j++;
+                }
+                count++;
+            }
+            else if (prog.charAt(i) == '\n') {
+                line++;
             }
         }
-        System.out.println("语法错误,第"+line+"行,缺少\""+missing+"\"");
+        System.out.println("语法错误,第" + line + "行,缺少\"" + missing + "\"");
     }
 
     private static void splitProg() {

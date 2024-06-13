@@ -57,7 +57,8 @@
       <workItem from="1717920369933" duration="15186000" />
       <workItem from="1717987115679" duration="20009000" />
       <workItem from="1718105840266" duration="13637000" />
-      <workItem from="1718195720405" duration="7623000" />
+      <workItem from="1718195720405" duration="9147000" />
+      <workItem from="1718282111315" duration="6433000" />
     </task>
     <task id="LOCAL-00001" summary="First Commit">
       <option name="closed" value="true" />
@@ -67,7 +68,15 @@
       <option name="project" value="LOCAL" />
       <updated>1718124915741</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="First Commit">
+      <option name="closed" value="true" />
+      <created>1718211324112</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1718211324112</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -82,8 +91,13 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/Main.java</url>
-          <line>246</line>
+          <line>255</line>
           <option name="timeStamp" value="1" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/Main.java</url>
+          <line>213</line>
+          <option name="timeStamp" value="2" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
